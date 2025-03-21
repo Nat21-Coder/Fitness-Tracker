@@ -226,7 +226,7 @@ export default function DashboardPage() {
               className="flex items-center gap-1"
             >
               <PlusCircle className="h-4 w-4" />
-              {showAddWorkout ? "Cancel" : "Add Workout"}
+              Add Workout
             </Button>
             <Button
               onClick={() => setShowAddGoal(!showAddGoal)}
@@ -234,7 +234,7 @@ export default function DashboardPage() {
               className="flex items-center gap-1"
             >
               <PlusCircle className="h-4 w-4" />
-              {showAddGoal ? "Cancel" : "Add Goal"}
+             Add Goal
             </Button>
           </div>
           <ThemeToggle />

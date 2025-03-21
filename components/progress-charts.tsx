@@ -192,8 +192,10 @@ export default function ProgressCharts({
         <div>
         <TabsList className="mb-2">
           <TabsTrigger value="calories">Calories Burned</TabsTrigger>
-          <TabsTrigger value="duration">Workout Duration</TabsTrigger>
         </TabsList>
+          <TabsList>
+          <TabsTrigger value="duration">Workout Duration</TabsTrigger>
+          </TabsList>
         <TabsList>
           {goals.length > 0 && (
             <TabsTrigger value="goals">Goal Progress</TabsTrigger>

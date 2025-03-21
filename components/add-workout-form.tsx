@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
+import { useForm, Controller } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,28 +24,61 @@ interface AddWorkoutFormProps {
   goals: Goal[]
 }
 
+interface WorkoutFormValues {
+  templateId: string
+  name: string
+  date: Date
+  duration: string
+  calories: string
+  exercises: string[]
+  goalId: string
+}
+
 export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWorkoutFormProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("")
-  const [name, setName] = useState("")
-  const [date, setDate] = useState<Date>(new Date())
-  const [duration, setDuration] = useState("")
-  const [calories, setCalories] = useState("")
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([])
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([])
-  const [selectedGoalId, setSelectedGoalId] = useState<string>("")
   const [compatibleGoals, setCompatibleGoals] = useState<Goal[]>([])
-  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Initialize React Hook Form
+  const {
+    control,
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    trigger,
+    formState: { errors, isSubmitting },
+    reset,
+    clearErrors,
+  } = useForm<WorkoutFormValues>({
+    defaultValues: {
+      templateId: "",
+      name: "",
+      date: new Date(),
+      duration: "",
+      calories: "",
+      exercises: [],
+      goalId: "",
+    },
+    mode: "onBlur", // You can change this to "onChange", "onSubmit", or "onTouched"
+  })
+
+  // Watch for template changes
+  const selectedTemplate = watch("templateId")
+  const selectedExercises = watch("exercises")
 
   // Update form when template is selected
   useEffect(() => {
     if (selectedTemplate) {
       const template = workoutTemplates.find((t) => t.id === selectedTemplate)
       if (template) {
-        setName(template.name)
-        setDuration(template.recommendedDuration.toString())
-        setCalories(template.estimatedCalories.toString())
+        // Set default values based on template
+        setValue("name", template.name)
+        setValue("duration", template.recommendedDuration.toString())
+        setValue("calories", template.estimatedCalories.toString())
+        setValue("exercises", [])
+
+        // Get available exercises for this template
         setAvailableExercises(getExercisesForWorkout(template.id))
-        setSelectedExercises([])
 
         // Find goals that are compatible with this workout template
         const compatible = goals.filter((goal) => {
@@ -61,43 +93,42 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
         })
 
         setCompatibleGoals(compatible)
-        setSelectedGoalId("")
+        setValue("goalId", "")
+
+        // Clear any existing errors when template changes
+        clearErrors()
       }
     } else {
       setAvailableExercises([])
       setCompatibleGoals([])
     }
-  }, [selectedTemplate, goals])
+  }, [selectedTemplate, goals, setValue, clearErrors])
 
+  // Toggle exercise selection
   const toggleExercise = (exerciseId: string) => {
-    if (selectedExercises.includes(exerciseId)) {
-      setSelectedExercises(selectedExercises.filter((id) => id !== exerciseId))
-    } else {
-      setSelectedExercises([...selectedExercises, exerciseId])
+    const currentExercises = [...selectedExercises]
+
+    const newExercises = currentExercises.includes(exerciseId)
+      ? currentExercises.filter((id) => id !== exerciseId)
+      : [...currentExercises, exerciseId]
+
+    // Update the exercises field
+    setValue("exercises", newExercises, {
+      shouldValidate: true, // This triggers validation after setting the value
+      shouldDirty: true,
+      shouldTouch: true,
+    })
+
+    // If we're adding an exercise and there was an error, clear it
+    if (newExercises.length > 0 && errors.exercises) {
+      clearErrors("exercises")
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Validate form
-    const newErrors: Record<string, string> = {}
-
-    if (!selectedTemplate) newErrors.template = "Please select a workout type"
-    if (!name.trim()) newErrors.name = "Workout name is required"
-    if (!date) newErrors.date = "Date is required"
-    if (!duration.trim()) newErrors.duration = "Duration is required"
-    if (isNaN(Number(duration)) || Number(duration) <= 0) newErrors.duration = "Duration must be a positive number"
-    if (!calories.trim()) newErrors.calories = "Calories is required"
-    if (isNaN(Number(calories)) || Number(calories) <= 0) newErrors.calories = "Calories must be a positive number"
-    if (selectedExercises.length === 0) newErrors.exercises = "At least one exercise is required"
-
-    setErrors(newErrors)
-
-    if (Object.keys(newErrors).length > 0) return
-
+  // Form submission handler
+  const onSubmit = (data: WorkoutFormValues) => {
     // Get exercise names for the workout
-    const exerciseNames = selectedExercises.map((id) => {
+    const exerciseNames = data.exercises.map((id) => {
       const exercise = getExerciseById(id)
       return exercise ? exercise.name : id
     })
@@ -105,35 +136,43 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
     // Create new workout
     const newWorkout: Workout = {
       id: crypto.randomUUID(),
-      templateId: selectedTemplate,
-      name,
-      date: date.toISOString(),
-      duration: Number(duration),
-      calories: Number(calories),
+      templateId: data.templateId,
+      name: data.name,
+      date: data.date.toISOString(),
+      duration: Number(data.duration),
+      calories: Number(data.calories),
       exercises: exerciseNames,
-      goalId: selectedGoalId || undefined,
+      goalId: data.goalId || undefined,
     }
 
     onAddWorkout(newWorkout)
+    reset() // Reset form after submission
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="template">Workout Type</Label>
-        <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-          <SelectTrigger id="template">
-            <SelectValue placeholder="Select a workout type" />
-          </SelectTrigger>
-          <SelectContent>
-            {workoutTemplates.map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.template && <p className="text-sm text-destructive">{errors.template}</p>}
+        <Label htmlFor="templateId">Workout Type</Label>
+        <Controller
+          name="templateId"
+          control={control}
+          rules={{ required: "Please select a workout type" }}
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange} onBlur={field.onBlur}>
+              <SelectTrigger id="templateId">
+                <SelectValue placeholder="Select a workout type" />
+              </SelectTrigger>
+              <SelectContent>
+                {workoutTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.templateId && <p className="text-sm text-destructive">{errors.templateId.message}</p>}
       </div>
 
       {selectedTemplate && (
@@ -143,31 +182,47 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
               <Label htmlFor="name">Workout Name</Label>
               <Input
                 id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                {...register("name", {
+                  required: "Workout name is required",
+                })}
                 placeholder="e.g., Morning Run, Upper Body"
               />
-              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="date"
-                    variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={date} onSelect={(date) => date && setDate(date)} initialFocus />
-                </PopoverContent>
-              </Popover>
-              {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
+              <Controller
+                name="date"
+                control={control}
+                rules={{ required: "Date is required" }}
+                render={({ field }) => (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="date"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => date && field.onChange(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              />
+              {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -175,12 +230,18 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
               <Input
                 id="duration"
                 type="number"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                {...register("duration", {
+                  required: "Duration is required",
+                  min: {
+                    value: 1,
+                    message: "Duration must be a positive number",
+                  },
+                  validate: (value) => !isNaN(Number(value)) || "Duration must be a number",
+                })}
                 placeholder="e.g., 45"
                 min="1"
               />
-              {errors.duration && <p className="text-sm text-destructive">{errors.duration}</p>}
+              {errors.duration && <p className="text-sm text-destructive">{errors.duration.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -188,12 +249,18 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
               <Input
                 id="calories"
                 type="number"
-                value={calories}
-                onChange={(e) => setCalories(e.target.value)}
+                {...register("calories", {
+                  required: "Calories is required",
+                  min: {
+                    value: 1,
+                    message: "Calories must be a positive number",
+                  },
+                  validate: (value) => !isNaN(Number(value)) || "Calories must be a number",
+                })}
                 placeholder="e.g., 300"
                 min="1"
               />
-              {errors.calories && <p className="text-sm text-destructive">{errors.calories}</p>}
+              {errors.calories && <p className="text-sm text-destructive">{errors.calories.message}</p>}
             </div>
           </div>
 
@@ -214,31 +281,42 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
               </TooltipProvider>
             </div>
 
-            {availableExercises.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {availableExercises.map((exercise) => (
-                  <div key={exercise.id} className="flex items-start space-x-2">
-                    <Checkbox
-                      id={`exercise-${exercise.id}`}
-                      checked={selectedExercises.includes(exercise.id)}
-                      onCheckedChange={() => toggleExercise(exercise.id)}
-                    />
-                    <div className="grid gap-1.5 leading-none">
-                      <Label htmlFor={`exercise-${exercise.id}`} className="text-sm font-medium cursor-pointer">
-                        {exercise.name}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        {exercise.category}
-                        {exercise.targetMuscleGroups && ` • ${exercise.targetMuscleGroups.join(", ")}`}
-                      </p>
+            <Controller
+              name="exercises"
+              control={control}
+              rules={{
+                validate: (value) => value.length > 0 || "At least one exercise is required",
+              }}
+              render={({ field }) => (
+                <>
+                  {availableExercises.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      {availableExercises.map((exercise) => (
+                        <div key={exercise.id} className="flex items-start space-x-2">
+                          <Checkbox
+                            id={`exercise-${exercise.id}`}
+                            checked={field.value.includes(exercise.id)}
+                            onCheckedChange={() => toggleExercise(exercise.id)}
+                          />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label htmlFor={`exercise-${exercise.id}`} className="text-sm font-medium cursor-pointer">
+                              {exercise.name}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {exercise.category}
+                              {exercise.targetMuscleGroups && ` • ${exercise.targetMuscleGroups.join(", ")}`}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Select a workout type to see available exercises</p>
-            )}
-            {errors.exercises && <p className="text-sm text-destructive">{errors.exercises}</p>}
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Select a workout type to see available exercises</p>
+                  )}
+                </>
+              )}
+            />
+            {errors.exercises && <p className="text-sm text-destructive">{errors.exercises.message}</p>}
           </div>
 
           {compatibleGoals.length > 0 && (
@@ -262,31 +340,37 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
                   </div>
                   <CardDescription>These goals are compatible with the selected workout type</CardDescription>
 
-                  <RadioGroup value={selectedGoalId} onValueChange={setSelectedGoalId} className="mt-3">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="" id="no-goal" />
-                        <Label htmlFor="no-goal" className="cursor-pointer">
-                          None (don't associate with any goal)
-                        </Label>
-                      </div>
-
-                      {compatibleGoals.map((goal) => (
-                        <div key={goal.id} className="flex items-start space-x-2">
-                          <RadioGroupItem value={goal.id} id={`goal-${goal.id}`} />
-                          <div className="grid gap-1.5 leading-none">
-                            <Label htmlFor={`goal-${goal.id}`} className="text-sm font-medium cursor-pointer">
-                              {goal.name}
+                  <Controller
+                    name="goalId"
+                    control={control}
+                    render={({ field }) => (
+                      <RadioGroup value={field.value} onValueChange={field.onChange} className="mt-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="" id="no-goal" />
+                            <Label htmlFor="no-goal" className="cursor-pointer">
+                              None (don't associate with any goal)
                             </Label>
-                            <p className="text-xs text-muted-foreground">
-                              Target: {goal.targetValue} {goal.unit} by{" "}
-                              {format(new Date(goal.targetDate), "MMM d, yyyy")}
-                            </p>
                           </div>
+
+                          {compatibleGoals.map((goal) => (
+                            <div key={goal.id} className="flex items-start space-x-2">
+                              <RadioGroupItem value={goal.id} id={`goal-${goal.id}`} />
+                              <div className="grid gap-1.5 leading-none">
+                                <Label htmlFor={`goal-${goal.id}`} className="text-sm font-medium cursor-pointer">
+                                  {goal.name}
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                  Target: {goal.targetValue} {goal.unit} by{" "}
+                                  {format(new Date(goal.targetDate), "MMM d, yyyy")}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </RadioGroup>
+                      </RadioGroup>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -298,7 +382,9 @@ export default function AddWorkoutForm({ onAddWorkout, onCancel, goals }: AddWor
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">Save Workout</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          Save Workout
+        </Button>
       </div>
     </form>
   )
