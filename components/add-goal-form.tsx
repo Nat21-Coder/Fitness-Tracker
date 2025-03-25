@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { Goal } from "@/lib/types"
+import type { Goal } from "@/types"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon } from "lucide-react"
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 import { format, addDays } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { goalCategories } from "@/lib/workout-data"
+import { goalCategories } from "@/constants/"
 
 interface AddGoalFormProps {
   onAddGoal: (goal: Goal) => void

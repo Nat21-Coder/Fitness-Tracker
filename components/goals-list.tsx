@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Goal, ProgressEntry } from "@/lib/types";
+import type { Goal, ProgressEntry } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Target, Calendar, Trash2, TrendingUp, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";

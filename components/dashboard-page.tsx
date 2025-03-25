@@ -6,19 +6,19 @@ import { Activity, Target, BarChart3 } from "lucide-react";
 import WorkoutList from "@/components/workout-list";
 import GoalsList from "@/components/goals-list";
 import ProgressCharts from "@/components/progress-charts";
-import type { Workout, Goal, ProgressEntry } from "@/lib/types";
+import type { Workout, Goal, ProgressEntry } from "@/types";
 import { toast } from "sonner";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog";
-import AddWorkoutForm from "./add-workout-form";
-import { getWorkoutTemplateById } from "@/lib/workout-data";
-import AddGoalForm from "./add-goal-form";
+} from "@/components/ui/dialog";
+import AddWorkoutForm from "@/components/add-workout-form";
+import { getWorkoutTemplateById } from "@/constants";
+import AddGoalForm from "@/components/add-goal-form";
 
 export default function DashboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -239,9 +239,6 @@ export default function DashboardPage() {
               workouts={workouts}
               onDeleteWorkout={deleteWorkout}
               goalNames={goalNames}
-              goals={goals}
-              setWorkouts={setWorkouts}
-              setGoals={setGoals}
               showAddWorkout={showAddWorkout}
               setShowAddWorkout={setShowAddWorkout}
             />

@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Workout, Goal } from "@/lib/types";
+import type { Workout, Goal } from "@/types";
 import {
   Select,
   SelectContent,

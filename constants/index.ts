@@ -1,4 +1,4 @@
-import type { Exercise, WorkoutTemplate } from "./types"
+import type { Exercise, WorkoutTemplate } from "@/types"
 
 // Predefined exercises
 export const exercises: Exercise[] = [

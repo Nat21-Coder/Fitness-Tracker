@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Goal, Workout } from "@/lib/types";
+import type { Workout } from "@/types";
 import { formatDate } from "@/lib/utils";
 import {
   Dumbbell,
@@ -17,11 +17,10 @@ import {
   Target,
   PlusCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { getWorkoutTemplateById } from "@/lib/workout-data";
+import { getWorkoutTemplateById } from "@/constants/";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,28 +35,20 @@ import { Dispatch, SetStateAction, useState } from "react";
 
 interface WorkoutListProps {
   workouts: Workout[];
-  goals: Goal[];
   onDeleteWorkout: (id: string) => void;
   goalNames: Record<string, string>;
-  setWorkouts: Dispatch<SetStateAction<Workout[]>>;
-  setGoals: Dispatch<SetStateAction<Goal[]>>;
   showAddWorkout: boolean;
   setShowAddWorkout: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function WorkoutList({
   workouts,
-  goals,
   onDeleteWorkout,
   goalNames,
-  setWorkouts,
-  setGoals,
   showAddWorkout,
   setShowAddWorkout,
 }: WorkoutListProps) {
   const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
-  console.log("Dialog Open:", showAddWorkout);
-
   const handleDeleteConfirm = () => {
     if (workoutToDelete) {
       onDeleteWorkout(workoutToDelete);

@@ -5,14 +5,14 @@ import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Workout, Goal, Exercise } from "@/lib/types";
+import type { Workout, Goal, Exercise } from "@/types";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Info, CheckSquare } from "lucide-react";
+import { CalendarIcon, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
@@ -27,7 +27,7 @@ import {
   workoutTemplates,
   getExercisesForWorkout,
   getExerciseById,
-} from "@/lib/workout-data";
+} from "@/constants/";
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "./ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddWorkoutFormProps {
   onAddWorkout: (workout: Workout) => void;
