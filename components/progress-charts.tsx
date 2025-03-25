@@ -71,21 +71,37 @@ export default function ProgressCharts({
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
+  // Group the workouts by date
+  const groupByDate = (workouts: Workout[]) => {
+    return workouts.reduce((acc, workout) => {
+      const workoutDate = new Date(workout.date).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      });
+
+      if (!acc[workoutDate]) {
+        acc[workoutDate] = { calories: 0, duration: 0 };
+      }
+
+      acc[workoutDate].calories += workout.calories;
+      acc[workoutDate].duration += workout.duration;
+
+      return acc;
+    }, {} as Record<string, { calories: number; duration: number }>);
+  };
+
+  // Process workout data and group by date
+  const groupedWorkouts = groupByDate(sortedWorkouts);
+
   // Prepare data for charts
-  const caloriesData = sortedWorkouts.map((workout) => ({
-    name: new Date(workout.date).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    }),
-    value: workout.calories,
+  const caloriesData = Object.keys(groupedWorkouts).map((date) => ({
+    name: date,
+    value: groupedWorkouts[date].calories,
   }));
 
-  const durationData = sortedWorkouts.map((workout) => ({
-    name: new Date(workout.date).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    }),
-    value: workout.duration,
+  const durationData = Object.keys(groupedWorkouts).map((date) => ({
+    name: date,
+    value: groupedWorkouts[date].duration,
   }));
 
   // Calculate workout stats
@@ -189,18 +205,18 @@ export default function ProgressCharts({
       </div>
 
       <Tabs defaultValue="calories">
-        <div>
-        <TabsList className="mb-2">
-          <TabsTrigger value="calories">Calories Burned</TabsTrigger>
-        </TabsList>
-          <TabsList>
-          <TabsTrigger value="duration">Workout Duration</TabsTrigger>
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <TabsList className="mb-2">
+            <TabsTrigger value="calories">Calories Burned</TabsTrigger>
           </TabsList>
-        <TabsList>
-          {goals.length > 0 && (
-            <TabsTrigger value="goals">Goal Progress</TabsTrigger>
-          )}
-        </TabsList>
+          <TabsList>
+            <TabsTrigger value="duration">Workout Duration</TabsTrigger>
+          </TabsList>
+          <TabsList>
+            {goals.length > 0 && (
+              <TabsTrigger value="goals">Goal Progress</TabsTrigger>
+            )}
+          </TabsList>
         </div>
         <TabsContent value="calories">
           <Card>

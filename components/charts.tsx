@@ -39,7 +39,7 @@ export function BarChart({ data }: ChartProps) {
   const isDark = theme === "dark"
   const textColor = isDark ? "#e1e1e1" : "#333333"
   const gridColor = isDark ? "#444444" : "#dddddd"
-  const barColor = "hsl(221.2, 83.2%, 53.3%)"
+  const barColor = "hsl(0, 0%, 50%)"
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -103,7 +103,7 @@ export function LineChart({ data }: ChartProps) {
   const isDark = theme === "dark"
   const textColor = isDark ? "#e1e1e1" : "#333333"
   const gridColor = isDark ? "#444444" : "#dddddd"
-  const lineColor = "hsl(221.2, 83.2%, 53.3%)"
+  const lineColor = "hsl(0, 0%, 50%)"
 
   return (
     <ResponsiveContainer width="100%" height="100%">

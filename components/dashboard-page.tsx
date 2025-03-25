@@ -2,29 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Activity, Target, BarChart3 } from "lucide-react";
+import { Activity, Target, BarChart3 } from "lucide-react";
 import WorkoutList from "@/components/workout-list";
-import AddWorkoutForm from "@/components/add-workout-form";
 import GoalsList from "@/components/goals-list";
-import AddGoalForm from "@/components/add-goal-form";
 import ProgressCharts from "@/components/progress-charts";
 import type { Workout, Goal, ProgressEntry } from "@/lib/types";
-import { toast } from "react-toastify";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { toast } from "sonner";
+import { ThemeToggle } from "./theme-toggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import AddWorkoutForm from "./add-workout-form";
 import { getWorkoutTemplateById } from "@/lib/workout-data";
+import AddGoalForm from "./add-goal-form";
 
 export default function DashboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [showAddWorkout, setShowAddWorkout] = useState(false);
+  const [showAddWorkout, setShowAddWorkout] = useState<boolean>(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
 
   // Load data from localStorage on component mount
@@ -55,7 +54,6 @@ export default function DashboardPage() {
     acc[goal.id] = goal.name;
     return acc;
   }, {} as Record<string, string>);
-
   // Update goal progress based on a workout
   const updateGoalProgress = (workout: Workout, goalId: string) => {
     return goals.map((goal) => {
@@ -101,7 +99,6 @@ export default function DashboardPage() {
           0
         );
       } else {
-        // For decrease goals (like weight loss), we don't automatically update the current value
         // as workouts don't directly decrease weight
         return {
           ...goal,
@@ -137,15 +134,9 @@ export default function DashboardPage() {
       }
     }
 
-    toast.success(
+    toast(
       `${templateName} added! Your workout has been successfully recorded.`
     );
-  };
-
-  const addGoal = (goal: Goal) => {
-    setGoals([...goals, goal]);
-    setShowAddGoal(false);
-    toast.success(`Your ${goal.category} goal has been set.`);
   };
 
   const deleteWorkout = (id: string) => {
@@ -188,6 +179,12 @@ export default function DashboardPage() {
     toast.success("Your workout has been removed.");
   };
 
+  const addGoal = (goal: Goal) => {
+    setGoals([...goals, goal]);
+    setShowAddGoal(false);
+    toast(`Your ${goal.category} goal has been set.`);
+  };
+
   const deleteGoal = (id: string) => {
     // Check if any workouts are associated with this goal
     const associatedWorkouts = workouts.filter(
@@ -215,92 +212,89 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-8">
-      <div className="flex md:flex-row flex-col justify-between gap-4 items-center">
-        <h1 className="text-3xl font-bold tracking-tight">
-          FitTrack Dashboard
-        </h1>
-        <div className="flex items-center gap-4">
-          <div className="flex  gap-2">
-            <Button
-              onClick={() => setShowAddWorkout(!showAddWorkout)}
-              className="flex items-center gap-1"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Add Workout
-            </Button>
-            <Button
-              onClick={() => setShowAddGoal(!showAddGoal)}
-              variant="outline"
-              className="flex items-center gap-1"
-            >
-              <PlusCircle className="h-4 w-4" />
-             Add Goal
-            </Button>
-          </div>
+      <div className="flex flex-col gap-10 ">
+        <div className="flex justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">
+            FitTrack Dashboard
+          </h1>
           <ThemeToggle />
         </div>
-      </div>
-
-      {showAddWorkout && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Workout</CardTitle>
-            <CardDescription>Record your workout details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AddWorkoutForm
-              onAddWorkout={addWorkout}
-              onCancel={() => setShowAddWorkout(false)}
+        <Tabs defaultValue="workouts" className="flex flex-col gap-10">
+          <TabsList className="sm:py-8">
+            <TabsTrigger value="workouts" className="flex items-center gap-2">
+              <Activity className="hidden sm:block h-4 w-4" />
+              <span className="sm:text-xl">Workouts</span>
+            </TabsTrigger>
+            <TabsTrigger value="goals" className="flex items-center gap-2">
+              <Target className="hidden sm:block h-4 w-4" />
+              <span className="sm:text-xl">Goals</span>
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="flex items-center gap-2">
+              <BarChart3 className="hidden sm:block  h-4 w-4" />
+              <span className="sm:text-xl">Progress</span>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="workouts" className="space-y-4 w-full">
+            <WorkoutList
+              workouts={workouts}
+              onDeleteWorkout={deleteWorkout}
+              goalNames={goalNames}
               goals={goals}
+              setWorkouts={setWorkouts}
+              setGoals={setGoals}
+              showAddWorkout={showAddWorkout}
+              setShowAddWorkout={setShowAddWorkout}
             />
-          </CardContent>
-        </Card>
-      )}
-
-      {showAddGoal && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Set New Goal</CardTitle>
-            <CardDescription>Define your fitness targets</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AddGoalForm
-              onAddGoal={addGoal}
-              onCancel={() => setShowAddGoal(false)}
+          </TabsContent>
+          <TabsContent value="goals" className="space-y-4 w-full">
+            <GoalsList
+              goals={goals}
+              onDeleteGoal={deleteGoal}
+              setGoals={setGoals}
+              showAddGoal={showAddGoal}
+              setShowAddGoal={setShowAddGoal}
             />
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="workouts" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="workouts" className="flex items-center gap-1">
-            <Activity className="h-4 w-4" />
-            Workouts
-          </TabsTrigger>
-          <TabsTrigger value="goals" className="flex items-center gap-1">
-            <Target className="h-4 w-4" />
-            Goals
-          </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-1">
-            <BarChart3 className="h-4 w-4" />
-            Progress
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="workouts" className="space-y-4">
-          <WorkoutList
-            workouts={workouts}
-            onDeleteWorkout={deleteWorkout}
-            goalNames={goalNames}
+          </TabsContent>
+          <TabsContent value="progress" className="space-y-4 w-full">
+            <ProgressCharts workouts={workouts} goals={goals} />
+          </TabsContent>
+        </Tabs>
+      </div>
+      {/* ADD WORKOUT  */}
+      <Dialog open={showAddWorkout} onOpenChange={setShowAddWorkout}>
+        <DialogContent className="max-h-[95vh] overflow-y-auto rounded-2xl p-6 shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              Add New Workout
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Record your workout details
+            </DialogDescription>
+          </DialogHeader>
+          <AddWorkoutForm
+            onAddWorkout={addWorkout}
+            onCancel={() => setShowAddWorkout(false)}
+            goals={goals}
           />
-        </TabsContent>
-        <TabsContent value="goals" className="space-y-4">
-          <GoalsList goals={goals} onDeleteGoal={deleteGoal} />
-        </TabsContent>
-        <TabsContent value="progress" className="space-y-4">
-          <ProgressCharts workouts={workouts} goals={goals} />
-        </TabsContent>
-      </Tabs>
+        </DialogContent>
+      </Dialog>
+      {/* ADD GOAL */}
+      <Dialog open={showAddGoal} onOpenChange={setShowAddGoal}>
+        <DialogContent className="max-h-[95vh] overflow-y-auto rounded-2xl p-6 shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              Set New Goal
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Define your fitness targets
+            </DialogDescription>
+          </DialogHeader>
+          <AddGoalForm
+            onAddGoal={addGoal}
+            onCancel={() => setShowAddGoal(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
