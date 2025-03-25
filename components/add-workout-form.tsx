@@ -24,10 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import {
-  workoutTemplates,
   getExercisesForWorkout,
   getExerciseById,
-} from "@/constants/";
+} from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +35,7 @@ import {
 } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { workoutTemplates } from "@/constants";
 
 interface AddWorkoutFormProps {
   onAddWorkout: (workout: Workout) => void;

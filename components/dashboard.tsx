@@ -17,10 +17,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import AddWorkoutForm from "@/components/add-workout-form";
-import { getWorkoutTemplateById } from "@/constants";
+import { getWorkoutTemplateById } from "@/lib/utils";
 import AddGoalForm from "@/components/add-goal-form";
 
-export default function DashboardPage() {
+export default function Dashboard() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showAddWorkout, setShowAddWorkout] = useState<boolean>(false);

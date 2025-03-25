@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { getWorkoutTemplateById } from "@/constants/";
+import { getWorkoutTemplateById } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
