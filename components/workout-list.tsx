@@ -55,14 +55,11 @@ export default function WorkoutList({
       setWorkoutToDelete(null);
     }
   };
-
- 
-
   if (workouts.length === 0) {
     return (
       <Card className="w-full">
         <CardHeader className="flex flex-col gap-4">
-          <CardTitle className="flex gap-2 sm:justify-between">
+          <CardTitle className="flex flex-wrap gap-2 sm:justify-between">
             <span className="text-md sm:text-xl">Your Workouts</span>
             <Button
               onClick={() => setShowAddWorkout((prev) => !prev)}
@@ -95,7 +92,7 @@ export default function WorkoutList({
     <div className="w-full">
       <Card className="w-full">
         <CardHeader className="flex flex-col gap-4">
-          <CardTitle className="flex gap-2 sm:justify-between">
+          <CardTitle className="flex flex-wrap gap-2 sm:justify-between">
             <span className="text-md sm:text-xl">Your Workouts</span>
             <Button
               onClick={() => setShowAddWorkout(!showAddWorkout)}
@@ -194,8 +191,7 @@ export default function WorkoutList({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Workout</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this workout? This action cannot
-              be undone.
+              Are you sure you want to delete this workout? 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

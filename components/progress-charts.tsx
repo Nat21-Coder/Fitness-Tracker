@@ -97,11 +97,13 @@ export default function ProgressCharts({
   const caloriesData = Object.keys(groupedWorkouts).map((date) => ({
     name: date,
     value: groupedWorkouts[date].calories,
+    unit: "KCal",
   }));
 
   const durationData = Object.keys(groupedWorkouts).map((date) => ({
     name: date,
     value: groupedWorkouts[date].duration,
+    unit: "minutes",
   }));
 
   // Calculate workout stats
@@ -126,24 +128,42 @@ export default function ProgressCharts({
     const goal = goals.find((g) => g.id === selectedGoal);
     if (!goal || !goal.progress || goal.progress.length === 0) return [];
 
-    // Sort progress entries by date
-    const sortedEntries = [...goal.progress].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    // Group progress entries by date
+    const groupedProgress = goal.progress.reduce((acc, entry) => {
+      const dateKey = format(new Date(entry.date), "MMM d");
+
+      if (!acc[dateKey]) {
+        acc[dateKey] = { ...entry };
+      } else {
+        acc[dateKey].value = entry.value;
+      }
+
+      return acc;
+    }, {});
+
+    // Convert object back to sorted array
+    const sortedEntries = Object.keys(groupedProgress)
+      .map((date) => ({
+        name: date,
+        value: groupedProgress[date].value,
+        unit: groupedProgress[date].unit,
+      }))
+      .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
 
     // Create cumulative data for chart
     let cumulativeValue = 0;
     return sortedEntries.map((entry) => {
       cumulativeValue += entry.value;
       return {
-        name: format(new Date(entry.date), "MMM d"),
+        name: entry.name,
         value: cumulativeValue,
+        unit: entry.unit,
       };
     });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-10">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Progress Overview</h2>
         <Select value={timeRange} onValueChange={setTimeRange}>
@@ -204,20 +224,16 @@ export default function ProgressCharts({
         </Card>
       </div>
 
-      <Tabs defaultValue="calories">
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <TabsList className="mb-2">
-            <TabsTrigger value="calories">Calories Burned</TabsTrigger>
-          </TabsList>
-          <TabsList>
-            <TabsTrigger value="duration">Workout Duration</TabsTrigger>
-          </TabsList>
-          <TabsList>
-            {goals.length > 0 && (
-              <TabsTrigger value="goals">Goal Progress</TabsTrigger>
-            )}
-          </TabsList>
-        </div>
+      <div className="mt-4">
+      <Tabs defaultValue="calories " className="flex flex-col gap-10">
+        <TabsList className="flex flex-col gap-2 sm:flex-row sm:bg-muted">
+          <TabsTrigger className="data-[state=active]:bg-gray-400 bg-gray-100"  value="calories">Calories Burned</TabsTrigger>
+          <TabsTrigger className=" data-[state=active]:bg-gray-400 bg-gray-100" value="duration">Workout Duration</TabsTrigger>
+          {goals.length > 0 && (
+            <TabsTrigger className="data-[state=active]:bg-gray-400 bg-gray-100" value="goals">Goal Progress</TabsTrigger>
+          )}
+        </TabsList>
+          <div>
         <TabsContent value="calories">
           <Card>
             <CardHeader>
@@ -300,80 +316,9 @@ export default function ProgressCharts({
             </CardContent>
           </Card>
         </TabsContent>
+          </div>
       </Tabs>
-
-      {goals.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Goal Progress</CardTitle>
-            <CardDescription>
-              Track your progress towards your fitness goals
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {goals.map((goal) => {
-                const calculateProgress = (goal: Goal) => {
-                  // For goals where lower is better (like weight loss)
-                  if (goal.goalType === "decrease") {
-                    // If we've reached or exceeded the target
-                    if (goal.currentValue <= goal.targetValue) {
-                      return 100;
-                    }
-                    // Calculate progress as a percentage of the distance from start to target
-                    // We need to estimate a starting point, let's assume starting value was 20% higher than target
-                    const estimatedStartValue = goal.targetValue * 1.2;
-                    return Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        Math.round(
-                          ((estimatedStartValue - goal.currentValue) /
-                            (estimatedStartValue - goal.targetValue)) *
-                            100
-                        )
-                      )
-                    );
-                  }
-
-                  // For goals where higher is better (like distance, reps, etc.)
-                  return Math.min(
-                    100,
-                    Math.max(
-                      0,
-                      Math.round((goal.currentValue / goal.targetValue) * 100)
-                    )
-                  );
-                };
-
-                const progress = calculateProgress(goal);
-                return (
-                  <div key={goal.id} className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{goal.name}</span>
-                      <span className="text-sm">{progress}%</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>
-                        Current: {goal.currentValue} {goal.unit}
-                      </span>
-                      <span>
-                        Target: {goal.targetValue} {goal.unit}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }

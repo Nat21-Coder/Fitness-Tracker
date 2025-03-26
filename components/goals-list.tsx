@@ -9,16 +9,21 @@ import {
 } from "@/components/ui/card";
 import type { Goal, ProgressEntry } from "@/types";
 import { formatDate } from "@/lib/utils";
-import { Target, Calendar, Trash2, TrendingUp, PlusCircle } from "lucide-react";
+import {
+  Target,
+  Calendar,
+  Trash2,
+  TrendingUp,
+  PlusCircle,
+  Plus,
+  Edit,
+  View,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+
 import { Badge } from "@/components/ui/badge";
 import { Dispatch, SetStateAction, useState } from "react";
 import {
@@ -31,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 interface GoalsListProps {
   goals: Goal[];
@@ -38,6 +44,8 @@ interface GoalsListProps {
   setGoals: Dispatch<SetStateAction<Goal[]>>;
   showAddGoal: boolean;
   setShowAddGoal: Dispatch<SetStateAction<boolean>>;
+  setShowAddProgress: Dispatch<SetStateAction<boolean>>;
+  setGoalIdToAddProgress: Dispatch<SetStateAction<string>>;
 }
 
 export default function GoalsList({
@@ -45,8 +53,11 @@ export default function GoalsList({
   onDeleteGoal,
   showAddGoal,
   setShowAddGoal,
+  setShowAddProgress,
+  setGoalIdToAddProgress,
 }: GoalsListProps) {
   const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
   const handleDeleteConfirm = () => {
     if (goalToDelete) {
@@ -59,7 +70,7 @@ export default function GoalsList({
     return (
       <Card className="w-full">
         <CardHeader className="flex flex-col gap-4">
-          <CardTitle className="flex gap-2 sm:justify-between">
+          <CardTitle className="flex flex-wrap gap-2 sm:justify-between">
             <span className="text-md sm:text-xl">Your Fitness Goals</span>
             <Button
               onClick={() => setShowAddGoal(!showAddGoal)}
@@ -83,51 +94,19 @@ export default function GoalsList({
     );
   }
 
-  // Sort goals by target date
   const sortedGoals = [...goals].sort(
     (a, b) =>
       new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime()
   );
 
-  // Calculate days remaining for each goal
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const calculateProgress = (goal: Goal) => {
-    // For goals where lower is better (like weight loss)
-    if (goal.goalType === "decrease") {
-      // If we've reached or exceeded the target
-      if (goal.currentValue <= goal.targetValue) {
-        return 100;
-      }
-      // Calculate progress as a percentage of the distance from start to target
-      // We need to estimate a starting point, let's assume starting value was 20% higher than target
-      const estimatedStartValue = goal.targetValue * 1.2;
-      return Math.min(
-        100,
-        Math.max(
-          0,
-          Math.round(
-            ((estimatedStartValue - goal.currentValue) /
-              (estimatedStartValue - goal.targetValue)) *
-              100
-          )
-        )
-      );
-    }
-
-    // For goals where higher is better (like distance, reps, etc.)
-    return Math.min(
-      100,
-      Math.max(0, Math.round((goal.currentValue / goal.targetValue) * 100))
-    );
-  };
-
   return (
-    <>
+    <div>
       <Card>
         <CardHeader className="flex flex-col gap-4">
-          <CardTitle className="flex gap-2 sm:justify-between">
+          <CardTitle className="flex flex-wrap gap-2 sm:justify-between">
             <span className="text-md sm:text-xl">Your Fitness Goals</span>
             <Button
               onClick={() => setShowAddGoal(!showAddGoal)}
@@ -142,7 +121,7 @@ export default function GoalsList({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[500px] pr-4">
+          <ScrollArea className="h-[80vh] pr-4">
             <div className="space-y-4">
               {sortedGoals.map((goal) => {
                 const targetDate = new Date(goal.targetDate);
@@ -150,9 +129,9 @@ export default function GoalsList({
                   (targetDate.getTime() - today.getTime()) /
                     (1000 * 60 * 60 * 24)
                 );
-                const progress = calculateProgress(goal);
 
                 return (
+                  // display the detail of the goal when this card is click
                   <Card key={goal.id} className="border border-muted">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
@@ -170,14 +149,36 @@ export default function GoalsList({
                             {goal.targetValue} {goal.unit}
                           </CardDescription>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setGoalToDelete(goal.id)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => setSelectedGoal(goal)}
+                          >
+                            <View className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => {
+                              setGoalIdToAddProgress(goal.id);
+                              setShowAddProgress(true);
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setGoalToDelete(goal.id)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -187,10 +188,13 @@ export default function GoalsList({
                             Current: {goal.currentValue} {goal.unit}
                           </span>
                           <span className="text-primary font-medium">
-                            {progress}%
+                            {goal.progressPercentage}%
                           </span>
                         </div>
-                        <Progress value={progress} className="h-2" />
+                        <Progress
+                          value={goal.progressPercentage}
+                          className="h-2"
+                        />
                         <div className="flex justify-between items-center text-sm text-muted-foreground">
                           <div className="flex flex-wrap items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -208,50 +212,6 @@ export default function GoalsList({
                                 } overdue`}
                           </span>
                         </div>
-
-                        {goal.progress && goal.progress.length > 0 && (
-                          <Collapsible className="mt-2">
-                            <CollapsibleTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="flex items-center gap-1 w-full justify-between p-2 h-auto"
-                              >
-                                <span className="text-xs">
-                                  View workout contributions
-                                </span>
-                                <TrendingUp className="h-3 w-3" />
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="space-y-2 mt-2 text-xs">
-                                {goal.progress.map(
-                                  (entry: ProgressEntry, index: number) => (
-                                    <div
-                                      key={index}
-                                      className="flex justify-between items-center py-1 border-b border-dashed border-muted"
-                                    >
-                                      <div>
-                                        <span className="font-medium">
-                                          {entry.workoutName}
-                                        </span>
-                                        <div className="text-muted-foreground">
-                                          {format(
-                                            new Date(entry.date),
-                                            "MMM d, yyyy"
-                                          )}
-                                        </div>
-                                      </div>
-                                      <span>
-                                        +{entry.value} {goal.unit}
-                                      </span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -262,36 +222,74 @@ export default function GoalsList({
         </CardContent>
       </Card>
 
-      <AlertDialog
-        open={!!goalToDelete}
-        onOpenChange={(open) => !open && setGoalToDelete(null)}
+    {/* Goal Detail Dialog */}
+    <Dialog
+        open={!!selectedGoal}
+        onOpenChange={(open) => !open && setSelectedGoal(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Goal</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this goal? This action cannot be
-              undone.
-              {goals?.find((g) => g?.id === goalToDelete)?.progress?.length >
-                0 && (
-                <p className="mt-2 font-medium">
-                  This goal has workout contributions that will be removed from
-                  the progress tracking.
-                </p>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        <DialogContent className="max-h-[80vh] p-6 rounded-2xl shadow-2xl  w-full max-w-2xl border border-muted-foreground overflow-y-auto">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-bold text-primary">
+              {selectedGoal?.name}
+            </DialogTitle>
+            <p className="text-lg font-semibold text-muted-foreground capitalize">
+              {selectedGoal?.category}
+            </p>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            {selectedGoal?.progress.map((p, index) => (
+              <div
+                key={`${p.name}-${index}`}
+                className=" p-4 rounded-lg shadow-sm flex flex-col gap-2"
+              >
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center">
+                  <span className="text-lg font-medium">{p.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    <Calendar className="inline-block h-4 w-4 mr-1" />
+                    Tracked on {formatDate(p.date)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-2 text-sm font-medium">
+                  <span className="text-gray-600">
+                    🎯 Target: {selectedGoal?.targetValue} {selectedGoal?.unit}
+                  </span>
+                  <span className="text-gray-600">
+                    📍 Current: {p.value} {selectedGoal?.unit}
+                  </span>
+                  <span className="text-gray-600 font-semibold">
+                    {p.percentage}%
+                  </span>
+                </div>
+                <Progress value={p?.percentage || 0} className="h-2" />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-center mt-6">
+            <Button variant="outline" onClick={() => setSelectedGoal(null)} className="px-6 py-2 rounded-lg font-semibold">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={!!goalToDelete} onOpenChange={(open) => !open && setGoalToDelete(null)}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Delete Goal</AlertDialogTitle>
+      <AlertDialogDescription>
+        Are you sure you want to delete this goal? 
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancel</AlertDialogCancel>
+      <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground">
+        Delete
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+
+    </div>
   );
 }

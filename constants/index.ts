@@ -1,4 +1,4 @@
-import type { Exercise, WorkoutTemplate } from "@/types"
+import type { Exercise, WorkoutTemplate } from "@/types";
 
 // Predefined exercises
 export const exercises: Exercise[] = [
@@ -104,14 +104,15 @@ export const exercises: Exercise[] = [
     targetMuscleGroups: ["biceps"],
     equipment: ["dumbbells", "barbell"],
   },
-]
+];
 
 // Predefined workout templates
 export const workoutTemplates: WorkoutTemplate[] = [
   {
     id: "wt-1",
     name: "Cardio Blast",
-    description: "High-intensity cardio workout to burn calories and improve endurance",
+    description:
+      "High-intensity cardio workout to burn calories and improve endurance",
     category: "cardio",
     recommendedDuration: 30,
     estimatedCalories: 300,
@@ -168,18 +169,110 @@ export const workoutTemplates: WorkoutTemplate[] = [
     suitableExercises: ["ex-12"],
     targetGoals: ["flexibility", "recovery"],
   },
-]
+];
 
 // Goal categories
 export const goalCategories = [
-  "weight loss",
-  "muscle gain",
-  "endurance",
-  "strength",
-  "flexibility",
-  "muscle tone",
-  "recovery",
-]
-
-
-
+  {
+    name: "weight loss",
+    metricUnits: [
+      {
+        title: "Body weight",
+        unit: "kg",
+      },
+      {
+        title: "Body fat percentage",
+        unit: "%",
+      },
+      {
+        title: "Waist circumference ",
+        unit: "cm/inches",
+      },
+    ],
+  },
+  {
+    name: "muscle gain",
+    metricUnits: [
+      {
+        title: " Muscle mass",
+        unit: "kg/lbs",
+      },
+     
+      {
+        title: "Max reps with fixed load",
+        unit: "count",
+      },
+    ],
+  },
+  {
+    name: "endurance",
+    metricUnits: [
+      {
+        title: "Cardio duration ",
+        unit: "minutes",
+      },
+      {
+        title: "Distance covered",
+        unit: "km/miles",
+      },
+      {
+        title: "Heart rate recovery time",
+        unit: "seconds",
+      },
+      {
+        title: "Max sustained power output",
+        unit: "Watts",
+      },
+    ],
+  },
+  {
+    name: "strength",
+    metricUnits: [
+      {
+        title: "Max reps with fixed load",
+        unit: "Count",
+      },
+      {
+        title: "Time to complete weighted movements",
+        unit: "Seconds",
+      },
+    ],
+  },
+  {
+    name: "flexibility",
+    metricUnits: [
+      {
+        title: "Range of motion",
+        unit: "degress",
+      },
+      {
+        title: "Hold duration",
+        unit: "seconds",
+      },
+    ],
+  },
+  {
+    name: "muscle tone",
+    metricUnits: [
+      { title: "Body fat percentage", unit: "%" },
+      { title: "Muscle mass", unit: "lbs" },
+    ],
+  },
+  {
+    name: "recovery",
+    metricUnits: [
+      {
+        title: "Resting heart rate",
+        unit: "bpm",
+      },
+      {
+        title: "Sleep quality/duration ",
+        unit: "hours",
+      },
+      {
+        title: "Perceived exertion scale ",
+        unit: "RPE 1-10",
+      },
+    ],
+  },
+];

@@ -59,7 +59,6 @@ export default function AddWorkoutForm({
   goals,
 }: AddWorkoutFormProps) {
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
-  const [compatibleGoals, setCompatibleGoals] = useState<Goal[]>([]);
   const {
     control,
     register,
@@ -94,23 +93,11 @@ export default function AddWorkoutForm({
         setValue("calories", template.estimatedCalories.toString());
         setValue("exercises", []);
         setAvailableExercises(getExercisesForWorkout(template.id));
-        const compatible = goals.filter((goal) => {
-          const isComplete =
-            goal.goalType === "increase"
-              ? goal.currentValue >= goal.targetValue
-              : goal.currentValue <= goal.targetValue;
-
-          if (isComplete) return false;
-          return template.targetGoals.includes(goal.category);
-        });
-
-        setCompatibleGoals(compatible);
         setValue("goalId", "");
         clearErrors();
       }
     } else {
       setAvailableExercises([]);
-      setCompatibleGoals([]);
     }
   }, [selectedTemplate, goals, setValue, clearErrors]);
 
@@ -215,8 +202,10 @@ export default function AddWorkoutForm({
               render={({ field }) => (
                 <Select
                   value={field.value}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    field.onBlur(); 
+                  }}
                 >
                   <SelectTrigger id="templateId">
                     <SelectValue placeholder="Choose a workout type" />
@@ -253,7 +242,6 @@ export default function AddWorkoutForm({
       </div>
 
       <div className="">
-        <h3 className="text-base font-semibold mb-2">Select Exercises</h3>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>Exercises</Label>
@@ -374,59 +362,6 @@ export default function AddWorkoutForm({
           </div>
         </div>
       </div>
-
-      {compatibleGoals.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-base font-semibold mb-2">
-              Link to Your Fitness Goals
-            </h3>
-            <CardDescription>
-              Choose a goal this workout contributes to (optional)
-            </CardDescription>
-            <Controller
-              name="goalId"
-              control={control}
-              render={({ field }) => (
-                <RadioGroup
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="mt-3"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="" id="no-goal" />
-                      <Label htmlFor="no-goal" className="cursor-pointer">
-                        No Goal
-                      </Label>
-                    </div>
-                    {compatibleGoals.map((goal) => (
-                      <div key={goal.id} className="flex items-start space-x-2">
-                        <RadioGroupItem
-                          value={goal.id}
-                          id={`goal-${goal.id}`}
-                        />
-                        <div className="grid gap-1.5 leading-none">
-                          <Label
-                            htmlFor={`goal-${goal.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {goal.name}
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Target: {goal.targetValue} {goal.unit} by{" "}
-                            {format(new Date(goal.targetDate), "MMM d, yyyy")}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-              )}
-            />
-          </CardContent>
-        </Card>
-      )}
 
       <div className="flex justify-end gap-2 pt-2 ">
         <Button type="button" variant="outline" onClick={onCancel}>

@@ -19,13 +19,15 @@ import {
 import AddWorkoutForm from "@/components/add-workout-form";
 import { getWorkoutTemplateById } from "@/lib/utils";
 import AddGoalForm from "@/components/add-goal-form";
+import AddProgressForm from "./add-progress-form";
 
 export default function Dashboard() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showAddWorkout, setShowAddWorkout] = useState<boolean>(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
-
+  const [showAddProgress, setShowAddProgress] = useState<boolean>(false);
+  const [goalIdToAddProgress,setGoalIdToAddProgress] = useState<string>('');
   // Load data from localStorage on component mount
   useEffect(() => {
     const savedWorkouts = localStorage.getItem("workouts");
@@ -54,74 +56,10 @@ export default function Dashboard() {
     acc[goal.id] = goal.name;
     return acc;
   }, {} as Record<string, string>);
-  // Update goal progress based on a workout
-  const updateGoalProgress = (workout: Workout, goalId: string) => {
-    return goals.map((goal) => {
-      // Skip if this goal is not related to this workout
-      if (goal.id !== goalId) return goal;
-
-      // Determine the value to add to the goal progress based on the metric
-      let valueToAdd = 0;
-
-      switch (goal.metricToTrack) {
-        case "duration":
-          valueToAdd = workout.duration;
-          break;
-        case "calories":
-          valueToAdd = workout.calories;
-          break;
-        case "workouts":
-          valueToAdd = 1; // Count as one workout
-          break;
-        case "custom":
-          // For custom metrics, we don't automatically update
-          return goal;
-      }
-
-      // Create a progress entry
-      const progressEntry: ProgressEntry = {
-        date: workout.date,
-        value: valueToAdd,
-        workoutId: workout.id,
-        workoutName: workout.name,
-      };
-
-      // Add to progress array
-      const updatedProgress = [...goal.progress, progressEntry];
-
-      // Calculate new current value
-      let newCurrentValue = goal.currentValue;
-
-      if (goal.goalType === "increase") {
-        // For increase goals, sum up all progress values
-        newCurrentValue = updatedProgress.reduce(
-          (sum, entry) => sum + entry.value,
-          0
-        );
-      } else {
-        // as workouts don't directly decrease weight
-        return {
-          ...goal,
-          progress: updatedProgress,
-        };
-      }
-
-      return {
-        ...goal,
-        currentValue: newCurrentValue,
-        progress: updatedProgress,
-      };
-    });
-  };
 
   const addWorkout = (workout: Workout) => {
     const newWorkout = { ...workout };
     setWorkouts((prev) => [...prev, newWorkout]);
-
-    // If this workout is related to a goal, update its progress
-    if (newWorkout.goalId) {
-      setGoals((prev) => updateGoalProgress(newWorkout, newWorkout.goalId!));
-    }
 
     setShowAddWorkout(false);
 
@@ -139,76 +77,62 @@ export default function Dashboard() {
     );
   };
 
-  const deleteWorkout = (id: string) => {
-    // Find the workout to be deleted
-    const workoutToDelete = workouts.find((w) => w.id === id);
-
-    if (workoutToDelete && workoutToDelete.goalId) {
-      // Update goals by removing this workout's contribution
-      setGoals((prevGoals) => {
-        return prevGoals.map((goal) => {
-          // Skip if this goal is not related to this workout
-          if (goal.id !== workoutToDelete.goalId) return goal;
-
-          // Remove this workout from the goal's progress
-          const updatedProgress = goal.progress.filter(
-            (entry) => entry.workoutId !== id
-          );
-
-          // Recalculate current value for "increase" goals
-          let newCurrentValue = goal.currentValue;
-
-          if (goal.goalType === "increase") {
-            newCurrentValue = updatedProgress.reduce(
-              (sum, entry) => sum + entry.value,
-              0
-            );
-          }
-
-          return {
-            ...goal,
-            currentValue: newCurrentValue,
-            progress: updatedProgress,
-          };
-        });
-      });
-    }
-
-    // Remove the workout
-    setWorkouts(workouts.filter((workout) => workout.id !== id));
-    toast.success("Your workout has been removed.");
-  };
-
+  
   const addGoal = (goal: Goal) => {
     setGoals([...goals, goal]);
     setShowAddGoal(false);
     toast(`Your ${goal.category} goal has been set.`);
   };
-
-  const deleteGoal = (id: string) => {
-    // Check if any workouts are associated with this goal
-    const associatedWorkouts = workouts.filter(
-      (workout) => workout.goalId === id
-    );
-
-    // Remove the goal association from those workouts
-    if (associatedWorkouts.length > 0) {
-      setWorkouts(
-        workouts.map((workout) => {
-          if (workout.goalId === id) {
-            const { goalId, ...rest } = workout;
-            return rest;
-          }
-          return workout;
-        })
-      );
-    }
-
-    // Delete the goal
-    setGoals(goals.filter((goal) => goal.id !== id));
-
-    toast("Your goal has been removed.");
+ 
+  const deleteWorkout = (id: string) => {
+    // Find the deleted workout
+    const deletedWorkout = workouts.find((workout) => workout.id === id);
+    if (!deletedWorkout) return;
+  
+    // Remove the workout
+    setWorkouts((prev) => prev.filter((workout) => workout.id !== id));
+  
+    // Show toast with undo option
+    toast.success("Workout removed.", {
+      action: {
+        label: "Undo",
+        onClick: () => setWorkouts((prev) => [...prev, deletedWorkout]),
+      },
+    });
   };
+  
+  const deleteGoal = (id: string) => {
+    // Find the deleted goal
+    const deletedGoal = goals.find((goal) => goal.id === id);
+    if (!deletedGoal) return;
+  
+    // Check if any workouts are associated with this goal
+    const associatedWorkouts = workouts.filter((workout) => workout.goalId === id);
+  
+    // Remove the goal association from those workouts
+    let updatedWorkouts = workouts;
+    if (associatedWorkouts.length > 0) {
+      updatedWorkouts = workouts.map((workout) =>
+        workout.goalId === id ? { ...workout, goalId: undefined } : workout
+      );
+      setWorkouts(updatedWorkouts);
+    }
+  
+    // Remove the goal
+    setGoals((prev) => prev.filter((goal) => goal.id !== id));
+  
+    // Show toast with undo option
+    toast.success("Goal removed.", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setGoals((prev) => [...prev, deletedGoal]);
+          setWorkouts(updatedWorkouts); // Restore workouts association
+        },
+      },
+    });
+  };
+  
 
   return (
     <div className="container mx-auto py-6 space-y-8">
@@ -250,6 +174,8 @@ export default function Dashboard() {
               setGoals={setGoals}
               showAddGoal={showAddGoal}
               setShowAddGoal={setShowAddGoal}
+              setShowAddProgress={setShowAddProgress}
+              setGoalIdToAddProgress={setGoalIdToAddProgress}
             />
           </TabsContent>
           <TabsContent value="progress" className="space-y-4 w-full">
@@ -259,7 +185,7 @@ export default function Dashboard() {
       </div>
       {/* ADD WORKOUT  */}
       <Dialog open={showAddWorkout} onOpenChange={setShowAddWorkout}>
-        <DialogContent className="max-h-[95vh] overflow-y-auto rounded-2xl p-6 shadow-lg">
+        <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl p-6 shadow-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               Add New Workout
@@ -277,7 +203,7 @@ export default function Dashboard() {
       </Dialog>
       {/* ADD GOAL */}
       <Dialog open={showAddGoal} onOpenChange={setShowAddGoal}>
-        <DialogContent className="max-h-[95vh] overflow-y-auto rounded-2xl p-6 shadow-lg">
+        <DialogContent className="max-h-[80vh] overflow-y-auto rounded-2xl p-6 shadow-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               Set New Goal
@@ -289,6 +215,24 @@ export default function Dashboard() {
           <AddGoalForm
             onAddGoal={addGoal}
             onCancel={() => setShowAddGoal(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddProgress} onOpenChange={setShowAddProgress}>
+        <DialogContent className=" rounded-2xl p-6 shadow-lg">
+          <DialogHeader className="flex justify-between items-center">
+          <DialogTitle className="text-2xl font-bold">
+           
+            Add progress To The Goal
+            </DialogTitle>
+          </DialogHeader>
+
+          <AddProgressForm
+            goals={goals}
+            setGoals={setGoals}
+            onCancel={() => setShowAddProgress(false)}
+            goalId={goalIdToAddProgress}
           />
         </DialogContent>
       </Dialog>

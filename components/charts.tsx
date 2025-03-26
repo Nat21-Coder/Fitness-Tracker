@@ -17,6 +17,7 @@ import { useState, useEffect } from "react"
 interface ChartData {
   name: string
   value: number
+  unit:string;
 }
 
 interface ChartProps {
@@ -104,7 +105,7 @@ export function LineChart({ data }: ChartProps) {
   const textColor = isDark ? "#e1e1e1" : "#333333"
   const gridColor = isDark ? "#444444" : "#dddddd"
   const lineColor = "hsl(0, 0%, 50%)"
-
+  const unit = data.length > 0 ? data[0].unit : "";
   return (
     <ResponsiveContainer width="100%" height="100%">
       <RechartsLineChart
@@ -142,7 +143,7 @@ export function LineChart({ data }: ChartProps) {
           }}
           itemStyle={{ color: textColor }}
           labelStyle={{ color: textColor, fontWeight: "bold", marginBottom: "5px" }}
-          formatter={(value: number) => [`${value} minutes`, "Duration"]}
+          formatter={(value: number) => [`${value} ${unit}`]}
           labelFormatter={(label) => `Date: ${label}`}
         />
         <Line
